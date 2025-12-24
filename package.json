@@ -1,0 +1,30 @@
+{
+    "name": "waterford-wave-api-server",
+    "version": "1.0.0",
+    "description": "API and background jobs server",
+    "main": "dist/index.js",
+    "type": "module",
+    "scripts": {
+        "dev": "tsx src/index.ts",
+        "build": "prisma generate && tsc",
+        "start": "node dist/index.js",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "express": "^5.2.1",
+        "dotenv": "^16.4.5",
+        "cors": "^2.8.5",
+        "@prisma/client": "^6.19.1"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.6",
+        "@types/node": "^25.0.2",
+        "@types/cors": "^2.8.17",
+        "tsx": "^4.19.2",
+        "typescript": "^5.6.2",
+        "prisma": "^6.19.1"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

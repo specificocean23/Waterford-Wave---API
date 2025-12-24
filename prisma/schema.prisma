@@ -1,0 +1,1112 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model badge_theme_config {
+  id            String   @id @default("default")
+  emojiRotation Json     @default("[]")
+  updatedAt     DateTime
+  createdAt     DateTime @default(now())
+}
+
+model bookmarks {
+  id        String   @id
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  posts     posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model bookmarks_page_config {
+  id                      String   @id @default("default")
+  heroEmoji               String   @default("🌊")
+  heroTitle               String   @default("Waterford Wave")
+  heroSubtitle            String   @default("Its Calm")
+  heroDescription         String   @default("just start clicking around I swear")
+  cardJoinTitle           String   @default("Join your neighbourhood chat")
+  cardJoinSubtitle        String   @default("Connect locally — apply via your town")
+  cardJoinButton          String   @default("Apply Now")
+  cardBusinessTitle       String   @default("Business Directory")
+  cardBusinessSubtitle    String   @default("Discover local shops, restaurants, and services")
+  cardBusinessButton      String   @default("Explore")
+  cardEventsTitle         String   @default("Events & Competitions")
+  cardEventsSubtitle      String   @default("Take your time")
+  cardEventsButton        String   @default("Discover")
+  cardTransportTitle      String   @default("Transport & Tides")
+  cardTransportSubtitle   String   @default("Links for bus routes, tide times, and travel alerts")
+  cardTransportButton     String   @default("Note for later")
+  cardArcadeTitle         String   @default("Arcade")
+  cardArcadeSubtitle      String   @default("Kick Some Ass in Space Huggers")
+  cardArcadeButton        String   @default("Start Playing")
+  cardReportTitle         String   @default("Report Issue")
+  cardReportSubtitle      String   @default("Help improve safety and community")
+  cardReportButton        String   @default("When I need it")
+  cardFreebiesTitle       String   @default("Freebies")
+  cardFreebiesSubtitle    String   @default("Give away items and earn town points")
+  cardFreebiesButton      String   @default("Browse")
+  spotlightSubtitle       String   @default("Showcasing local talent, creativity, and artistry from our vibrant community")
+  statTownesLabel       String   @default("Townes")
+  statUsersLabel          String   @default("Active Users")
+  statEventsLabel         String   @default("Events")
+  statBusinessesLabel     String   @default("Businesses")
+  matureHeroTitle         String   @default("Enjoy the Shite")
+  matureSpotlightSubtitle String   @default("✨ The Shite Spotlight ✨")
+  updatedAt               DateTime
+  createdAt               DateTime @default(now())
+  updatedBy               String?
+}
+
+model branding_config {
+  id          String   @id @default("default")
+  siteIconUrl String?
+  faviconUrl  String?
+  iconColor   String?
+  pageIcons   Json?
+  updatedAt   DateTime
+  createdAt   DateTime @default(now())
+}
+
+model business_backups {
+  id        String   @id
+  data      Json
+  createdAt DateTime @default(now())
+  createdBy String
+}
+
+model business_reviews {
+  id         String     @id
+  userId     String
+  businessId String
+  content    String     @db.VarChar(250)
+  rating     Int
+  createdAt  DateTime   @default(now())
+  businesses businesses @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  users      users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([userId])
+}
+
+model business_schema_config {
+  id        String   @id
+  schema    Json
+  updatedBy String?
+  updatedAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model businesses {
+  id               String             @id
+  name             String
+  slug             String             @unique
+  category         String
+  description      String?
+  address          String?
+  phone            String?
+  website          String?
+  hours            String?
+  image            String?
+  rating           Float              @default(0)
+  featured         Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  latitude         Float?
+  longitude        Float?
+  mediaUrls        String[]           @default([])
+  ownerMessage     String?
+  videoUrl         String?
+  sustainable      Boolean            @default(false)
+  ownership        String             @default("irish")
+  business_reviews business_reviews[]
+
+  @@index([category])
+  @@index([featured])
+  @@index([ownership])
+}
+
+model call_participants {
+  id         String     @id
+  roomId     String
+  userId     String
+  joinedAt   DateTime   @default(now())
+  isSpeaking Boolean    @default(false)
+  call_rooms call_rooms @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  users      users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([isSpeaking])
+  @@index([roomId])
+  @@index([userId])
+}
+
+model call_rooms {
+  id                String              @id
+  name              String
+  parishId          String
+  creatorId         String
+  maxParticipants   Int                 @default(50)
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  expiresAt         DateTime?
+  call_participants call_participants[]
+  users             users               @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  parishes          parishes            @relation(fields: [parishId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId])
+  @@index([isActive])
+  @@index([parishId])
+}
+
+model channel_members {
+  channelId  String
+  userId     String
+  role       String    @default("member")
+  lastReadAt DateTime?
+  joinedAt   DateTime  @default(now())
+  leftAt     DateTime?
+  channels   channels  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  users      users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([channelId, userId])
+  @@index([channelId])
+  @@index([userId])
+}
+
+model channels {
+  id              String            @id
+  type            String            @default("town")
+  name            String?
+  avatarUrl       String?
+  createdBy       String
+  parishId        String?
+  createdAt       DateTime          @default(now())
+  archivedAt      DateTime?
+  description     String?           @default("Welcome to your town group chat! Share updates, ask questions, and connect with your community.")
+  updatedAt       DateTime          @default(now())
+  channel_members channel_members[]
+  parishes        parishes?         @relation(fields: [parishId], references: [id], onDelete: Cascade)
+  messages        messages[]
+
+  @@index([parishId])
+  @@index([type, archivedAt])
+}
+
+model comments {
+  id        String   @id
+  content   String
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  posts     posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model community_badges {
+  id           String        @id
+  name         String        @unique
+  description  String
+  icon         String
+  criteria     String
+  pointsReward Int           @default(50)
+  user_badges  user_badges[]
+}
+
+model dialect_texts {
+  id             String   @id @default("default")
+  pageTitle      String   @default("Enjoy the Shite")
+  spotlightTitle String   @default("✨ The Shite Spotlight ✨")
+  updatedAt      DateTime
+  createdAt      DateTime @default(now())
+}
+
+model email_verification {
+  id        String   @id
+  email     String   @unique
+  pin       String
+  attempts  Int      @default(0)
+  verified  Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model events {
+  id          String   @id
+  title       String
+  date        String
+  category    String
+  location    String
+  emoji       String   @default("🎉")
+  color       String   @default("#8b5cf6")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  isActive    Boolean  @default(true)
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model follows {
+  followerId                       String
+  followingId                      String
+  users_follows_followerIdTousers  users  @relation("follows_followerIdTousers", fields: [followerId], references: [id], onDelete: Cascade)
+  users_follows_followingIdTousers users  @relation("follows_followingIdTousers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model freebie_verifications {
+  id          String             @id
+  postId      String
+  recipientId String
+  photoUrl    String
+  status      VerificationStatus @default(PENDING)
+  verifiedBy  String?
+  verifiedAt  DateTime?
+  createdAt   DateTime           @default(now())
+  posts       posts              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  users       users              @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, recipientId])
+}
+
+model game_rooms {
+  id           String         @id
+  gameName     String
+  roomName     String
+  description  String?
+  parishId     String
+  hostId       String
+  status       RoomStatus     @default(WAITING)
+  maxPlayers   Int            @default(4)
+  voiceChat    Boolean        @default(false)
+  gameServerIp String?
+  gameRoomCode String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  expiresAt    DateTime?
+  users        users          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  parishes     parishes       @relation(fields: [parishId], references: [id], onDelete: Cascade)
+  room_players room_players[]
+
+  @@index([gameName])
+  @@index([hostId])
+  @@index([parishId])
+  @@index([status])
+}
+
+model likes {
+  userId String
+  postId String
+  posts  posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  users  users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model message_reactions {
+  id        String   @id
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  messages  messages @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+}
+
+model messages {
+  id                String              @id
+  channelId         String
+  userId            String
+  senderId          String?             // For shared posts via API
+  text              String?
+  content           String?             // For shared post messages
+  attachments       Json?
+  replyToId         String?
+  postId            String?             // Reference to shared post
+  createdAt         DateTime            @default(now())
+  deletedAt         DateTime?
+  isPinned          Boolean             @default(false)
+  updatedAt         DateTime            @default(now())
+  message_reactions message_reactions[]
+  channels          channels            @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  messages          messages?           @relation("messagesTomessages", fields: [replyToId], references: [id])
+  other_messages    messages[]          @relation("messagesTomessages")
+  users             users               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+  @@index([channelId, isPinned])
+  @@index([postId])
+}
+
+model news_blocks {
+  id        String   @id
+  link      String   @unique
+  reason    String?
+  createdBy String?
+  createdAt DateTime @default(now())
+}
+
+model news_sources {
+  id              String         @id
+  name            String
+  type            NewsSourceType
+  url             String
+  enabled         Boolean        @default(true)
+  filters         Json?
+  itemSelector    String?
+  titleSelector   String?
+  linkSelector    String?
+  summarySelector String?
+  imageSelector   String?
+  lastFetchedAt   DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime
+}
+
+model notifications {
+  id                                     String           @id
+  recipientId                            String
+  issuerId                               String
+  postId                                 String?
+  type                                   NotificationType
+  read                                   Boolean          @default(false)
+  createdAt                              DateTime         @default(now())
+  users_notifications_issuerIdTousers    users            @relation("notifications_issuerIdTousers", fields: [issuerId], references: [id], onDelete: Cascade)
+  posts                                  posts?           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  users_notifications_recipientIdTousers users            @relation("notifications_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade)
+}
+
+model parish_join_requests {
+  id         String              @id
+  userId     String
+  parishId   String
+  status     TownRequestStatus @default(PENDING)
+  message    String?
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime            @default(now())
+  parishes   parishes            @relation(fields: [parishId], references: [id], onDelete: Cascade)
+  users      users               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, parishId])
+  @@index([parishId, status])
+}
+
+model parish_point_events {
+  id        String         @id
+  parishId  String
+  userId    String
+  type      PointEventType
+  points    Int
+  entityId  String?
+  createdAt DateTime       @default(now())
+  parishes  parishes       @relation(fields: [parishId], references: [id], onDelete: Cascade)
+  users     users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([parishId])
+  @@index([userId])
+}
+
+model parishes {
+  id                   String                 @id
+  name                 String                 @unique
+  slug                 String                 @unique
+  description          String?
+  avatarUrl            String?
+  latitude             Float?
+  longitude            Float?
+  totalPoints          Int                    @default(0)
+  memberCount          Int                    @default(0)
+  createdAt            DateTime               @default(now())
+  call_rooms           call_rooms[]
+  channels             channels[]
+  game_rooms           game_rooms[]
+  parish_join_requests parish_join_requests[]
+  parish_point_events  parish_point_events[]
+  location_stories     location_stories[]
+  users                users[]
+  experiences          experiences[]
+  community_challenges community_challenges[]
+  itineraries          itineraries[]
+  digital_murals       digital_murals[]
+}
+
+model post_media {
+  id        String    @id
+  postId    String?
+  type      MediaType
+  url       String
+  createdAt DateTime  @default(now())
+  posts     posts?    @relation(fields: [postId], references: [id])
+}
+
+model posts {
+  id                    String                  @id
+  content               String
+  userId                String
+  isMeetup              Boolean                 @default(false)
+  meetupDate            DateTime?
+  meetupLocation        String?
+  isFreebie             Boolean                 @default(false)
+  createdAt             DateTime                @default(now())
+  bookmarks             bookmarks[]
+  comments              comments[]
+  freebie_verifications freebie_verifications[]
+  likes                 likes[]
+  notifications         notifications[]
+  post_media            post_media[]
+  users                 users                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model push_subscriptions {
+  id        String   @id
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model reports {
+  id          String         @id
+  userId      String?
+  category    ReportCategory
+  title       String
+  description String?
+  status      ReportStatus   @default(OPEN)
+  latitude    Float
+  longitude   Float
+  address     String?
+  photos      String[]       @default([])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime
+  users       users?         @relation(fields: [userId], references: [id])
+
+  @@index([category, status])
+  @@index([latitude, longitude])
+}
+
+model room_players {
+  id         String     @id
+  roomId     String
+  userId     String
+  joinedAt   DateTime   @default(now())
+  game_rooms game_rooms @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  users      users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+}
+
+model sessions {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model spotlight_items {
+  id               String   @id
+  title            String
+  caption          String?
+  emoji            String?  @default("✨")
+  mediaUrls        String[] @default([])
+  videoUrl         String?
+  order            Int      @default(0)
+  isActive         Boolean  @default(true)
+  countdownEnabled Boolean? @default(false)
+  releaseDate      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+  borderColorDark  String?
+  borderColorLight String?
+  description      String?
+  textColorDark    String?
+  textColorLight   String?
+  captionFont      String?  @default("sans")
+  captionFontSize  Int?     @default(16)
+
+  @@index([isActive, order])
+}
+
+model streaks {
+  id             String     @id
+  userId         String
+  type           StreakType
+  count          Int        @default(1)
+  lastActivityAt DateTime   @default(now())
+  startedAt      DateTime   @default(now())
+  isBroken       Boolean    @default(false)
+  users          users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+}
+
+model system_config {
+  id                       String   @id @default("default")
+  requireEmailVerification Boolean  @default(false)
+  maintenanceMode          Boolean  @default(false)
+  allowSignups             Boolean  @default(true)
+  updatedAt                DateTime
+  createdAt                DateTime @default(now())
+  llmModel                 String   @default("gpt-5")
+}
+
+model waterford_wave_menu_config {
+  id                    String   @id @default("default")
+  exploreEnabled        Boolean  @default(true)
+  storiesEnabled        Boolean  @default(true)
+  storyExplorerEnabled  Boolean  @default(true)
+  experiencesEnabled    Boolean  @default(true)
+  challengesEnabled     Boolean  @default(true)
+  muralEnabled          Boolean  @default(true)
+  directoryEnabled      Boolean  @default(true)
+  eventsEnabled         Boolean  @default(true)
+  transportEnabled      Boolean  @default(true)
+  arcadeEnabled         Boolean  @default(true)
+  reportEnabled         Boolean  @default(true)
+  freebiesEnabled       Boolean  @default(true)
+  spotlightEnabled      Boolean  @default(true)
+  updatedAt             DateTime
+  createdAt             DateTime @default(now())
+}
+
+model user_badges {
+  id               String           @id
+  userId           String
+  badgeId          String
+  earnedAt         DateTime         @default(now())
+  community_badges community_badges @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  users            users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}
+
+model users {
+  id                                             String                  @id
+  username                                       String                  @unique
+  displayName                                    String
+  email                                          String?                 @unique
+  passwordHash                                   String?
+  googleId                                       String?                 @unique
+  avatarUrl                                      String?
+  bio                                            String?
+  parishId                                       String?
+  createdAt                                      DateTime                @default(now())
+  showTownPublic                               Boolean                 @default(false)
+  muted                                          Boolean                 @default(false)
+  mutedAt                                        DateTime?
+  emailVerificationToken                         String?
+  emailVerificationTokenExpiresAt                DateTime?
+  emailVerified                                  Boolean                 @default(false)
+  privateProfile                                 Boolean                 @default(false)
+  bookmarks                                      bookmarks[]
+  business_reviews                               business_reviews[]
+  call_participants                              call_participants[]
+  call_rooms                                     call_rooms[]
+  channel_members                                channel_members[]
+  comments                                       comments[]
+  follows_follows_followerIdTousers              follows[]               @relation("follows_followerIdTousers")
+  follows_follows_followingIdTousers             follows[]               @relation("follows_followingIdTousers")
+  freebie_verifications                          freebie_verifications[]
+  game_rooms                                     game_rooms[]
+  likes                                          likes[]
+  message_reactions                              message_reactions[]
+  messages                                       messages[]
+  notifications_notifications_issuerIdTousers    notifications[]         @relation("notifications_issuerIdTousers")
+  notifications_notifications_recipientIdTousers notifications[]         @relation("notifications_recipientIdTousers")
+  parish_join_requests                           parish_join_requests[]
+  parish_point_events                            parish_point_events[]
+  posts                                          posts[]
+  push_subscriptions                             push_subscriptions[]
+  reports                                        reports[]
+  room_players                                   room_players[]
+  sessions                                       sessions[]
+  streaks                                        streaks[]
+  user_badges                                    user_badges[]
+  location_stories                               location_stories[]
+  soundscape_recordings                          soundscape_recordings[]
+  time_capsule_pins                              time_capsule_pins[]
+  story_comments                                 story_comments[]
+  story_reactions                                story_reactions[]
+  story_collections                              story_collections[]
+  experiences                                    experiences[]
+  experience_reviews                             experience_reviews[]
+  experience_tips_sent                           experience_tips[]       @relation("TipsSent")
+  experience_tips_received                       experience_tips[]       @relation("TipsReceived")
+  challenge_submissions                          challenge_submissions[]
+  itineraries                                    itineraries[]
+  mural_tiles                                    mural_tiles[]
+  tile_votes                                     tile_votes[]
+  parishes                                       parishes?               @relation(fields: [parishId], references: [id])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum NewsSourceType {
+  RSS
+  SCRAPE
+}
+
+enum NotificationType {
+  LIKE
+  FOLLOW
+  COMMENT
+}
+
+enum TownRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PointEventType {
+  POST
+  COMMENT
+  LIKE_GIVEN
+  MEETUP_POST
+  MEETUP_ATTEND
+  FREEBIE_POST
+  FREEBIE_VERIFIED
+  STREAK_BONUS
+  GAME
+}
+
+enum ReportCategory {
+  ROADS
+  CYCLING
+  PEDESTRIAN
+  LIGHTING
+  LITTER
+  VANDALISM
+  WATER
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum RoomStatus {
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum StreakType {
+  DAILY_POST
+  WEEKLY_EVENT
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+enum LocationStoryType {
+  PERSONAL
+  HISTORICAL
+  BUSINESS
+  ARTIST
+}
+
+enum TimeCapsuleStatus {
+  SCHEDULED
+  UNLOCKED
+}
+
+model location_stories {
+  id              String   @id
+  parishId        String
+  userId          String
+  title           String
+  description     String
+  storyType       LocationStoryType @default(PERSONAL)
+  latitude        Float
+  longitude       Float
+  address         String?
+  mediaUrls       String[] @default([])
+  videoUrl        String?
+  audioUrl        String?  // For soundscape recordings
+  rating          Float    @default(0)
+  likes           Int      @default(0)
+  views           Int      @default(0)
+  isVerified      Boolean  @default(false)
+  verifiedBy      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  deletedAt       DateTime?
+  parishes        parishes @relation(fields: [parishId], references: [id], onDelete: Cascade)
+  users           users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  soundscapes     soundscape_recordings[]
+  time_capsules   time_capsule_pins[]
+  story_comments  story_comments[]
+  story_reactions story_reactions[]
+  collections     story_collection_items[] @relation("StoryCollections")
+
+  @@index([parishId, createdAt])
+  @@index([latitude, longitude])
+  @@index([storyType])
+  @@index([isVerified])
+}
+
+model soundscape_recordings {
+  id            String   @id
+  storyId       String
+  userId        String
+  title         String
+  description   String?
+  audioUrl      String
+  duration      Int      // Duration in seconds
+  tags          String[] @default([]) // e.g., ["market", "ambient", "day"]
+  recordedAt    DateTime
+  createdAt     DateTime @default(now())
+  location_stories location_stories @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  users         users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+  @@index([userId])
+}
+
+model time_capsule_pins {
+  id              String            @id
+  storyId         String
+  userId          String
+  content         String
+  unlocksAt       DateTime
+  status          TimeCapsuleStatus @default(SCHEDULED)
+  unlockedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  location_stories location_stories @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  users           users             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+  @@index([unlocksAt])
+  @@index([status])
+}
+
+model story_comments {
+  id        String   @id
+  storyId   String
+  userId    String
+  content   String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+  location_stories location_stories @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+  @@index([userId])
+}
+
+model story_reactions {
+  id        String   @id
+  storyId   String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  location_stories location_stories @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId, emoji])
+  @@index([storyId])
+}
+
+model story_collections {
+  id          String   @id
+  userId      String
+  name        String
+  description String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  deletedAt   DateTime?
+  users       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       story_collection_items[]
+
+  @@index([userId])
+  @@index([isPublic])
+}
+
+model story_collection_items {
+  id           String   @id
+  collectionId String
+  storyId      String
+  createdAt    DateTime @default(now())
+  collections  story_collections @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  stories      location_stories  @relation("StoryCollections", fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, storyId])
+  @@index([collectionId])
+  @@index([storyId])
+}
+
+// ============================================
+// LOCAL EXPERIENCES MARKETPLACE
+// ============================================
+
+enum ExperienceType {
+  GUIDED_WALK
+  FOOD_TOUR
+  WORKSHOP
+  DISCOVERY_ROUTE
+  CULTURAL_EXPERIENCE
+  OTHER
+}
+
+enum ChallengeStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+model experiences {
+  id               String   @id
+  parishId         String
+  userId           String
+  title            String
+  description      String   @db.Text
+  experienceType   ExperienceType
+  location         String?
+  latitude         Float?
+  longitude        Float?
+  imageUrl         String?
+  isPaid           Boolean  @default(false)
+  price            Float?
+  duration         String?  // e.g., "2 hours", "half day"
+  maxParticipants  Int?
+  rating           Float    @default(0)
+  likes            Int      @default(0)
+  views            Int      @default(0)
+  isFeatured       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+  deletedAt        DateTime?
+  
+  parishes         parishes @relation(fields: [parishId], references: [id], onDelete: Cascade)
+  users            users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviews          experience_reviews[]
+  itineraries      itinerary_items[]
+  tips             experience_tips[]
+  
+  @@index([parishId])
+  @@index([userId])
+  @@index([experienceType])
+  @@index([isFeatured])
+}
+
+model experience_reviews {
+  id           String   @id
+  experienceId String
+  userId       String
+  rating       Int      // 1-5
+  comment      String   @db.VarChar(500)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  
+  experiences  experiences @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  users        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([experienceId, userId])
+  @@index([experienceId])
+  @@index([userId])
+}
+
+model experience_tips {
+  id           String   @id
+  experienceId String
+  senderId     String
+  receiverId   String
+  amount       Float    // Amount tipped
+  message      String?  @db.VarChar(200)
+  createdAt    DateTime @default(now())
+  
+  experiences  experiences @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  senders      users    @relation("TipsSent", fields: [senderId], references: [id], onDelete: Cascade)
+  receivers    users    @relation("TipsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@index([experienceId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model community_challenges {
+  id          String   @id
+  parishId    String
+  title       String
+  description String  @db.Text
+  imageUrl    String?
+  objective   String  // What participants need to do
+  status      ChallengeStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  endsAt      DateTime?
+  
+  parishes    parishes @relation(fields: [parishId], references: [id], onDelete: Cascade)
+  submissions challenge_submissions[]
+  
+  @@index([parishId])
+  @@index([status])
+}
+
+model challenge_submissions {
+  id          String   @id
+  challengeId String
+  userId      String
+  photoUrl    String
+  description String? @db.VarChar(300)
+  votes       Int     @default(0)
+  createdAt   DateTime @default(now())
+  
+  challenges  community_challenges @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  users       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([challengeId])
+  @@index([userId])
+}
+
+model itineraries {
+  id          String   @id
+  parishId    String
+  userId      String
+  title       String
+  description String? @db.Text
+  theme       String  // e.g., "Art Lover's Day", "Foodie Adventure"
+  isPublic    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  
+  parishes    parishes @relation(fields: [parishId], references: [id], onDelete: Cascade)
+  users       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       itinerary_items[]
+  
+  @@index([parishId])
+  @@index([userId])
+  @@index([isPublic])
+}
+
+model itinerary_items {
+  id            String   @id
+  itineraryId   String
+  experienceId  String
+  position      Int      // Order in itinerary
+  notes         String?  @db.VarChar(300)
+  
+  itineraries   itineraries @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  experiences   experiences @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  
+  @@unique([itineraryId, experienceId])
+  @@index([itineraryId])
+  @@index([experienceId])
+}
+
+// ============================================
+// DIGITAL MURAL / ART WALL
+// ============================================
+
+enum MuralTileStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FEATURED
+}
+
+model digital_murals {
+  id          String   @id
+  parishId    String
+  title       String
+  description String? @db.Text
+  theme       String  // Current theme/prompt
+  width       Int     @default(1200)
+  height      Int     @default(800)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  
+  parishes    parishes @relation(fields: [parishId], references: [id], onDelete: Cascade)
+  tiles       mural_tiles[]
+  prompts     art_prompts[]
+  
+  @@index([parishId])
+  @@index([isActive])
+}
+
+model mural_tiles {
+  id           String   @id
+  muralId      String
+  artistId     String
+  title        String
+  description  String?  @db.Text
+  imageUrl     String
+  positionX    Float
+  positionY    Float
+  width        Float
+  height       Float
+  voteCount    Int      @default(0)
+  status       MuralTileStatus @default(PENDING)
+  sponsoredBy  String?  // Business name/ID
+  createdAt    DateTime @default(now())
+  
+  murals       digital_murals @relation(fields: [muralId], references: [id], onDelete: Cascade)
+  artists      users    @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  votes        tile_votes[]
+  
+  @@index([muralId])
+  @@index([artistId])
+  @@index([status])
+}
+
+model tile_votes {
+  id        String   @id
+  tileId    String
+  userId    String
+  createdAt DateTime @default(now())
+  
+  tiles     mural_tiles @relation(fields: [tileId], references: [id], onDelete: Cascade)
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([tileId, userId])
+  @@index([tileId])
+  @@index([userId])
+}
+
+model art_prompts {
+  id          String   @id
+  muralId     String
+  title       String
+  description String  @db.Text
+  startsAt    DateTime
+  endsAt      DateTime
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  
+  murals      digital_murals @relation(fields: [muralId], references: [id], onDelete: Cascade)
+  
+  @@index([muralId])
+  @@index([isActive])
+}
